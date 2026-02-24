@@ -25,7 +25,7 @@ st.markdown("""
     /* 1. Top Left: Soft Cloud Blue */
     div[data-testid="column"]:nth-of-type(1) { 
         background-color: #e3f2fd; 
-        color: #0d47a1;
+        color: #000000;
     }
     
     /* 2. Top Right: Minty Azure */
