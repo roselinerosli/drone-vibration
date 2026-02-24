@@ -167,22 +167,22 @@ with col3:
     st.markdown("""
     <div style="font-size: 13px; color: #444;">
     <table style="width:100%; border-collapse: collapse; background-color: rgba(255,255,255,0.4); border-radius: 8px;">
-      <tr style="border-bottom: 2px solid #5c6bc0;">
+      <tr style="border-bottom: 2px solid #145374;">
         <th style="text-align: left; padding: 8px; color: #3949ab;">Range</th>
         <th style="text-align: left; padding: 8px; color: #3949ab;">Condition</th>
         <th style="text-align: left; padding: 8px; color: #3949ab;">Status</th>
       </tr>
-      <tr style="border-bottom: 1px solid #e8eaf6;">
+      <tr style="border-bottom: 1px solid #5588a3;">
         <td style="padding: 6px;">0 - 5 Hz</td>
         <td style="padding: 6px;">Normal / Wind</td>
         <td style="padding: 6px; color: #2e7d32; font-weight: bold;">🟢 Safe</td>
       </tr>
-      <tr style="border-bottom: 1px solid #e8eaf6;">
+      <tr style="border-bottom: 1px solid #e8e8e8;">
         <td style="padding: 6px;">5 - 10 Hz</td>
         <td style="padding: 6px;">Propeller Imbalance</td>
         <td style="padding: 6px; color: #f9a825; font-weight: bold;">🟡 Check</td>
       </tr>
-      <tr style="border-bottom: 1px solid #e8eaf6;">
+      <tr style="border-bottom: 1px solid #00334e;">
         <td style="padding: 6px;">10 - 20 Hz</td>
         <td style="padding: 6px;">Bent Shaft</td>
         <td style="padding: 6px; color: #ef6c00; font-weight: bold;">🟠 Danger</td>
