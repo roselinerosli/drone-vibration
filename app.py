@@ -10,7 +10,7 @@ st.set_page_config(page_title="Drone Diagnostics", layout="wide", page_icon="ðŸš
 st.markdown("""
     <style>
     /* Global Background - Clean White */
-    .stApp { background-color: #aed3e3; }
+    .stApp { background-color: #f1fbfd; }
     
     /* General Card Styling */
     div[data-testid="column"] {
