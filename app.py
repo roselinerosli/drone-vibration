@@ -6,25 +6,18 @@ import altair as alt
 # 1. PAGE CONFIGURATION
 st.set_page_config(page_title="Drone Diagnostics", layout="wide", page_icon="🚁")
 
-# 2. CUSTOM CSS (Brown Palette & Styling)
+# 2. CUSTOM CSS
 st.markdown("""
     <style>
-    /* Main Background */
     .stApp { background-color: #fdfbf7; }
-    
-    /* Card Styling */
     div[data-testid="column"] {
         padding: 20px; border: 2px solid #2c2c2c; border-radius: 8px;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
-    
-    /* Section Colors */
     div[data-testid="column"]:nth-of-type(1) { background-color: #f5f5dc; }
     div[data-testid="column"]:nth-of-type(2) { background-color: #faf0e6; }
     div[data-testid="column"]:nth-of-type(3) { background-color: #fff8dc; }
     div[data-testid="column"]:nth-of-type(4) { background-color: #faebd7; }
-    
-    /* Animations & Status */
     @keyframes blinker { 50% { opacity: 0.3; } }
     .blinking {
         animation: blinker 0.8s linear infinite; color: #721c24; background-color: #f8d7da;
@@ -39,55 +32,54 @@ st.markdown("""
 
 st.title("🚁 Drone Vibration Analysis System")
 
-# Layout
 col1, col2 = st.columns(2)
 col3, col4 = st.columns(2)
 
-# Session State
 if 'df' not in st.session_state:
     st.session_state.df = None
 
 # ==========================================
-# SECTION 1: DATA INPUT (Recalculating Gs)
+# SECTION 1: DATA INPUT (4 Columns)
 # ==========================================
 with col1:
     st.subheader("1. Flight Data Input")
-    uploaded_file = st.file_uploader("Upload CSV (Time, Raw, G-Force)", type=["csv"])
+    uploaded_file = st.file_uploader("Upload CSV (Index, Time, Raw, Accel)", type=["csv"])
     
     if uploaded_file is not None:
         try:
-            # Read columns. We ignore the rounded 'G_Ref' to fix the precision error.
-            df = pd.read_csv(uploaded_file, header=None, names=["Time", "Raw", "G_Ref"])
+            # READ 4 COLUMNS: Index, Time, Raw, Acceleration
+            # We assume your CSV has these 4 columns in order.
+            df = pd.read_csv(uploaded_file, header=None, names=["Index", "Time", "Raw", "Accel"])
             
-            # --- RECALCULATE G-FORCE ---
-            # Using standard ADXL335 calibration to get float precision
-            ZERO_OFFSET = 349  
-            SENSITIVITY = 67.0 
-            df["G_Force"] = (df["Raw"] - ZERO_OFFSET) / SENSITIVITY
+            # Metadata
+            N = len(df) # Should be 1024
             
-            # Metrics
-            N = len(df)
-            duration = df["Time"].iloc[-1] - df["Time"].iloc[0]
-            sampling_rate = N / duration if duration > 0 else 100
+            # Calculate Sampling Interval (T) from the Time column
+            # Excel: 0.01
+            T = df["Time"].iloc[1] - df["Time"].iloc[0]
+            if T == 0: T = 0.01 # Fallback to prevent divide by zero
             
-            # Store in session
+            sampling_rate = 1.0 / T
+            
+            # Store in session state
             st.session_state.df = df
             st.session_state.N = N
+            st.session_state.T = T
             st.session_state.rate = sampling_rate
             
-            # Display
+            # Display Metrics
             m1, m2, m3 = st.columns(3)
-            m1.metric("Samples", f"{N}")
-            m2.metric("Duration", f"{duration:.2f} s")
+            m1.metric("Samples (N)", f"{N}")
+            m2.metric("Interval (T)", f"{T:.3f} s")
             m3.metric("Rate", f"{int(sampling_rate)} Hz")
             
-            st.caption("✅ Data Processed. Re-calculated from Raw Data for precision.")
+            st.success("✅ Data Loaded. Using Column D (Accel) for FFT.")
             
         except Exception as e:
             st.error(f"Error reading file: {e}")
 
 # ==========================================
-# SECTION 2: FFT ANALYSIS (Exact Excel Match)
+# SECTION 2: FFT ANALYSIS (Exact Excel Formula)
 # ==========================================
 with col2:
     st.subheader("2. Frequency Analysis (FFT)")
@@ -95,30 +87,44 @@ with col2:
     if st.session_state.df is not None:
         df = st.session_state.df
         N = st.session_state.N
-        rate = st.session_state.rate
+        T = st.session_state.T
         
-        # --- FFT CALCULATION ---
-        T = 1.0 / rate
+        # --- 1. DFT COEFFICIENT (Column E in Excel) ---
+        # np.fft.fft produces the complex numbers exactly like Excel's Fourier Analysis
+        dft_coeffs = np.fft.fft(df["Accel"])
         
-        # 1. Get DFT Coefficients (Complex Numbers)
-        yf = np.fft.fft(df["G_Force"])
-        xf = np.fft.fftfreq(N, T)[:N//2]
+        # --- 2. SPECTRAL AMPLITUDE (Column F in Excel) ---
+        # Formula: =IMABS(E2) * (2/1024)
+        # In Python: np.abs() computes IMABS
+        spectral_amplitude = np.abs(dft_coeffs) * (2.0 / N)
         
-        # 2. APPLY YOUR EXCEL FORMULA: 
-        # Excel: =IMABS(dft) * (2/N)
-        # Python: np.abs(yf) * (2.0/N)
-        magnitude = np.abs(yf[0:N//2]) * (2.0 / N)
+        # --- 3. FREQUENCY HZ (Column G in Excel) ---
+        # Formula: =Index * (1 / (1024 * 0.01))
+        # We create an array of indices [0, 1, 2, ..., N-1]
+        k_indices = np.arange(N)
+        frequency_hz = k_indices * (1.0 / (N * T))
         
-        # Remove DC Offset (0Hz)
-        magnitude[0] = 0 
+        # --- 4. SLICING (Show only first half) ---
+        # FFT mirrors the data, so we only need the first half (0 to Nyquist)
+        # Excel typically lists all, but the graph only needs the first half.
+        half_N = N // 2
+        
+        final_freq = frequency_hz[:half_N]
+        final_amp = spectral_amplitude[:half_N]
+        
+        # Fix DC Offset (Index 0) visualization
+        final_amp[0] = 0
         
         # --- ALTAIR GRAPH ---
-        fft_df = pd.DataFrame({"Frequency": xf, "Spectral Amplitude": magnitude})
+        fft_df = pd.DataFrame({
+            "Frequency": final_freq, 
+            "Spectral Amplitude": final_amp
+        })
         
         # Find Peak
-        peak_idx = np.argmax(magnitude)
-        peak_freq = xf[peak_idx]
-        peak_mag = magnitude[peak_idx]
+        peak_idx = np.argmax(final_amp)
+        peak_freq = final_freq[peak_idx]
+        peak_mag = final_amp[peak_idx]
         
         peak_data = pd.DataFrame({
             "Frequency": [peak_freq], 
@@ -126,12 +132,12 @@ with col2:
             "Label": [f"Peak: {peak_freq:.1f} Hz"]
         })
 
-        # Chart
         line_chart = alt.Chart(fft_df).mark_line(color='#4e342e').encode(
             x=alt.X('Frequency', title='Frequency (Hz)'),
             y=alt.Y('Spectral Amplitude', title='Spectral Amplitude (G)'),
             tooltip=['Frequency', 'Spectral Amplitude']
         )
+        
         peak_point = alt.Chart(peak_data).mark_circle(color='red', size=100).encode(
             x='Frequency', y='Spectral Amplitude', tooltip=['Label', 'Spectral Amplitude']
         )
