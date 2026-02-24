@@ -127,12 +127,11 @@ with col2:
         st.altair_chart((line_chart + peak_point).interactive(), use_container_width=True)
 
 # ==========================================
-# SECTION 3: REFERENCE GUIDE (New Low-Freq Scale)
+# SECTION 3: REFERENCE GUIDE
 # ==========================================
 with col3:
     st.subheader("3. Failure Reference Guide")
     
-    # NEW COMPACT HTML TABLE WITH TIGHTER RANGES (0-5Hz Normal)
     st.markdown("""
     <div style="font-size: 13px; color: #333;">
     <table style="width:100%; border-collapse: collapse;">
@@ -166,7 +165,7 @@ with col3:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# SECTION 4: DIAGNOSTICS ALERT (Updated Logic)
+# SECTION 4: DIAGNOSTICS ALERT (Strict Logic)
 # ==========================================
 with col4:
     st.subheader("4. System Health Status")
@@ -175,23 +174,27 @@ with col4:
         st.write(f"**Max Vibration:** {peak_mag:.4f} G at **{peak_freq:.2f} Hz**")
         st.write("---")
         
-        # --- NEW "LOW FREQUENCY" LOGIC ---
-        # 0-5 Hz = NORMAL
-        if peak_mag < 0.1 or peak_freq <= 5:
+        # --- STRICT FREQUENCY LOGIC (No Magnitude Override) ---
+        
+        # 0 to 5 Hz: SAFE
+        if peak_freq <= 5:
             st.markdown('<div class="safe-status">✅ SYSTEM NORMAL</div>', unsafe_allow_html=True)
-            st.write(f"Peak at {peak_freq:.2f} Hz is within safe range (0-5 Hz).")
+            st.write(f"Peak Frequency ({peak_freq:.2f} Hz) is within the safe range.")
             
-        # 5-10 Hz = PROP IMBALANCE (Now catches your ~8Hz peaks!)
+        # 5 to 10 Hz: PROP IMBALANCE
         elif 5 < peak_freq <= 10:
             st.markdown('<div class="blinking">⚠️ PROP IMBALANCE</div>', unsafe_allow_html=True)
-            st.info("💡 **Fix:** Check props for chips. Tighten prop nuts.")
+            st.info(f"**Warning:** Peak detected at {peak_freq:.2f} Hz (Range: 5-10 Hz).")
+            st.write("💡 **Fix:** Check props for chips. Tighten prop nuts.")
             
-        # 10-20 Hz = SHAFT ISSUE
+        # 10 to 20 Hz: SHAFT ISSUE
         elif 10 < peak_freq <= 20:
             st.markdown('<div class="blinking">🟠 MOTOR SHAFT ISSUE</div>', unsafe_allow_html=True)
-            st.warning("💡 **Fix:** Remove props. Spin motors. Check for wobble.")
+            st.warning(f"**Danger:** Peak detected at {peak_freq:.2f} Hz (Range: 10-20 Hz).")
+            st.write("💡 **Fix:** Remove props. Spin motors. Check for wobble.")
             
-        # 20+ Hz = BEARING FAILURE
-        elif peak_freq > 20:
+        # Above 20 Hz: BEARING FAILURE
+        else: # peak_freq > 20
             st.markdown('<div class="blinking">🔴 BEARING FAILURE</div>', unsafe_allow_html=True)
-            st.error("💡 **Fix:** Grinding sound? Replace motor immediately.")
+            st.error(f"**Critical:** High frequency peak at {peak_freq:.2f} Hz.")
+            st.write("💡 **Fix:** Grinding sound? Replace motor immediately.")
