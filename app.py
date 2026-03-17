@@ -115,4 +115,71 @@ with col1:
             
             # 4. Automatically generate Time (Assumes 100Hz -> 0.01s steps)
             T_interval = 0.01
-            df.insert(1, "Time", df["Index"] * T_
+            df.insert(1, "Time", df["Index"] * T_interval)
+            
+            # Metadata
+            N = len(df)
+            T = T_interval
+            sampling_rate = 1.0 / T
+            
+            # Store in session state
+            st.session_state.df = df
+            st.session_state.N = N
+            st.session_state.T = T
+            st.session_state.rate = sampling_rate
+            
+            # Metrics Display
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Samples Used", f"{N}")
+            m2.metric("Calculated Duration", f"{(N-1)*T:.2f} s")
+            m3.metric("Assumed Rate", f"{int(sampling_rate)} Hz")
+            
+            st.success("✅ Data Cleaned: 1024 rows truncated, Time & Index auto-generated.")
+            
+        except Exception as e:
+            st.error(f"Error reading or processing file: {e}")
+
+# ==========================================
+# SECTION 2: FFT ANALYSIS
+# ==========================================
+with col2:
+    st.subheader("2. Frequency Analysis (FFT)")
+    
+    if st.session_state.df is not None:
+        df = st.session_state.df
+        N = st.session_state.N
+        T = st.session_state.T
+        
+        # FFT Math
+        dft_coeffs = np.fft.fft(df["Accel"])
+        spectral_amplitude = np.abs(dft_coeffs) * (2.0 / N)
+        
+        k_indices = np.arange(N)
+        frequency_hz = k_indices * (1.0 / (N * T))
+        
+        # Slicing
+        half_N = N // 2
+        final_freq = frequency_hz[:half_N]
+        final_amp = spectral_amplitude[:half_N]
+        final_amp[0] = 0 # Zero DC Offset
+        
+        # Graphing
+        fft_df = pd.DataFrame({"Frequency": final_freq, "Spectral Amplitude": final_amp})
+        
+        peak_idx = np.argmax(final_amp)
+        peak_freq = final_freq[peak_idx]
+        peak_mag = final_amp[peak_idx]
+        
+        peak_data = pd.DataFrame({
+            "Frequency": [peak_freq], 
+            "Spectral Amplitude": [peak_mag], 
+            "Label": [f"Peak: {peak_freq:.1f} Hz"]
+        })
+
+        line_chart = alt.Chart(fft_df).mark_line(color='#0277bd').encode( 
+            x=alt.X('Frequency', title='Frequency (Hz)'),
+            y=alt.Y('Spectral Amplitude', title='Spectral Amplitude (G)'),
+            tooltip=['Frequency', 'Spectral Amplitude']
+        )
+        peak_point = alt.Chart(peak_data).mark_circle(color='#d32f2f', size=100).encode( 
+            x='Frequency',
