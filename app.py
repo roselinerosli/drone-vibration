@@ -182,4 +182,70 @@ with col2:
             tooltip=['Frequency', 'Spectral Amplitude']
         )
         peak_point = alt.Chart(peak_data).mark_circle(color='#d32f2f', size=100).encode( 
-            x='Frequency',
+            x='Frequency', y='Spectral Amplitude', tooltip=['Label', 'Spectral Amplitude']
+        )
+        st.altair_chart((line_chart + peak_point).interactive(), use_container_width=True)
+
+# ==========================================
+# SECTION 3: REFERENCE GUIDE
+# ==========================================
+with col3:
+    st.subheader("3. Failure Reference Guide")
+    
+    st.markdown("""
+    <div style="font-size: 13px; color: #444;">
+    <table style="width:100%; border-collapse: collapse; background-color: rgba(255,255,255,0.4); border-radius: 8px;">
+      <tr style="border-bottom: 2px solid #5c6bc0;">
+        <th style="text-align: left; padding: 8px; color: #3949ab;">Range</th>
+        <th style="text-align: left; padding: 8px; color: #3949ab;">Condition</th>
+        <th style="text-align: left; padding: 8px; color: #3949ab;">Status</th>
+      </tr>
+      <tr style="border-bottom: 1px solid #e8eaf6;">
+        <td style="padding: 6px;">0 - 5 Hz</td>
+        <td style="padding: 6px;">Normal / Wind</td>
+        <td style="padding: 6px; color: #2e7d32; font-weight: bold;">🟢 Safe</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #e8eaf6;">
+        <td style="padding: 6px;">5 - 10 Hz</td>
+        <td style="padding: 6px;">Propeller Imbalance</td>
+        <td style="padding: 6px; color: #f9a825; font-weight: bold;">🟡 Check</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #e8eaf6;">
+        <td style="padding: 6px;">10 - 20 Hz</td>
+        <td style="padding: 6px;">Bent Shaft</td>
+        <td style="padding: 6px; color: #ef6c00; font-weight: bold;">🟠 Danger</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px;">20+ Hz</td>
+        <td style="padding: 6px;">Bad Bearings</td>
+        <td style="padding: 6px; color: #c62828; font-weight: bold;">🔴 Critical</td>
+      </tr>
+    </table>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==========================================
+# SECTION 4: DIAGNOSTICS ALERT
+# ==========================================
+with col4:
+    st.subheader("4. System Health Status")
+    
+    if st.session_state.df is not None:
+        st.write(f"**Max Vibration:** {peak_mag:.4f} G at **{peak_freq:.2f} Hz**")
+        st.write("---")
+        
+        if peak_freq <= 5:
+            st.markdown('<div class="safe-status">✅ SYSTEM NORMAL</div>', unsafe_allow_html=True)
+            st.write(f"Peak at {peak_freq:.2f} Hz is within the safe range (0-5 Hz).")
+        elif 5 < peak_freq <= 10:
+            st.markdown('<div class="blinking">⚠️ PROP IMBALANCE</div>', unsafe_allow_html=True)
+            st.info(f"**Warning:** Peak detected at {peak_freq:.2f} Hz.")
+            st.markdown("**🛠 Fix:** Check props for chips. Tighten prop nuts.")
+        elif 10 < peak_freq <= 20:
+            st.markdown('<div class="blinking">🟠 MOTOR SHAFT ISSUE</div>', unsafe_allow_html=True)
+            st.warning(f"**Danger:** Peak detected at {peak_freq:.2f} Hz.")
+            st.markdown("**🛠 Fix:** Remove props. Spin motors manually. Check for wobble.")
+        else:
+            st.markdown('<div class="blinking">🔴 BEARING FAILURE</div>', unsafe_allow_html=True)
+            st.error(f"**Critical:** High frequency peak at {peak_freq:.2f} Hz.")
+            st.markdown("**🛠 Fix:** Grinding sound? Replace motor immediately.")
