@@ -6,7 +6,7 @@ import altair as alt
 # 1. PAGE CONFIGURATION
 st.set_page_config(page_title="Drone Diagnostics", layout="wide", page_icon="🚁")
 
-# 2. ANIMATED BACKGROUND (Flying Drones)
+# 2. ANIMATED BACKGROUND (Realistic Quadcopters)
 st.markdown("""
     <style>
     /* Global Background */
@@ -18,23 +18,30 @@ st.markdown("""
         z-index: 0; pointer-events: none; overflow: hidden;
     }
     
-    /* BASE DRONE STYLING */
+    /* BASE DRONE STYLING (Using a transparent DJI Phantom PNG) */
     .drone {
-        position: absolute; display: block; filter: grayscale(50%);
+        position: absolute; 
+        display: block; 
+        background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e0/DJI_Phantom_3_Advanced.png');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        /* Optional: adds a slight motion blur effect to the background drones */
+        filter: drop-shadow(0px 10px 5px rgba(0,0,0,0.2)); 
     }
 
     /* DRONE FLEET SETUP (Size, Opacity, Start Position, Animation Speed) */
-    /* Flying Right (Flipped using scaleX) */
-    .d1 { top: 10%; left: -10%; font-size: 25px; opacity: 0.3; animation: flyRight 35s linear infinite; }
-    .d2 { top: 40%; left: -15%; font-size: 45px; opacity: 0.15; animation: flyRight 25s linear infinite 5s; }
-    .d3 { top: 70%; left: -10%; font-size: 20px; opacity: 0.4; animation: flyRight 40s linear infinite 12s; }
-    .d4 { top: 85%; left: -20%; font-size: 60px; opacity: 0.1; animation: flyRight 20s linear infinite 2s; }
+    /* Flying Right */
+    .d1 { top: 10%; left: -10%; width: 80px; height: 80px; opacity: 0.35; animation: flyRight 35s linear infinite; }
+    .d2 { top: 40%; left: -15%; width: 120px; height: 120px; opacity: 0.15; animation: flyRight 25s linear infinite 5s; }
+    .d3 { top: 70%; left: -10%; width: 60px; height: 60px; opacity: 0.4; animation: flyRight 40s linear infinite 12s; }
+    .d4 { top: 85%; left: -20%; width: 160px; height: 160px; opacity: 0.1; animation: flyRight 20s linear infinite 2s; }
 
-    /* Flying Left (Normal emoji orientation) */
-    .d5 { top: 20%; right: -10%; font-size: 30px; opacity: 0.25; animation: flyLeft 28s linear infinite 3s; }
-    .d6 { top: 55%; right: -15%; font-size: 50px; opacity: 0.15; animation: flyLeft 22s linear infinite 8s; }
-    .d7 { top: 80%; right: -10%; font-size: 25px; opacity: 0.35; animation: flyLeft 32s linear infinite 1s; }
-    .d8 { top: 30%; right: -20%; font-size: 70px; opacity: 0.08; animation: flyLeft 18s linear infinite 15s; }
+    /* Flying Left */
+    .d5 { top: 20%; right: -10%; width: 90px; height: 90px; opacity: 0.25; animation: flyLeft 28s linear infinite 3s; }
+    .d6 { top: 55%; right: -15%; width: 140px; height: 140px; opacity: 0.15; animation: flyLeft 22s linear infinite 8s; }
+    .d7 { top: 80%; right: -10%; width: 70px; height: 70px; opacity: 0.35; animation: flyLeft 32s linear infinite 1s; }
+    .d8 { top: 30%; right: -20%; width: 200px; height: 200px; opacity: 0.08; animation: flyLeft 18s linear infinite 15s; }
 
     /* --- FLIGHT ANIMATIONS WITH BOBBING --- */
     @keyframes flyRight {
@@ -69,14 +76,14 @@ st.markdown("""
     </style>
     
     <div class="drone-bg">
-        <div class="drone d1">🚁</div>
-        <div class="drone d2">🚁</div>
-        <div class="drone d3">🚁</div>
-        <div class="drone d4">🚁</div>
-        <div class="drone d5">🚁</div>
-        <div class="drone d6">🚁</div>
-        <div class="drone d7">🚁</div>
-        <div class="drone d8">🚁</div>
+        <div class="drone d1"></div>
+        <div class="drone d2"></div>
+        <div class="drone d3"></div>
+        <div class="drone d4"></div>
+        <div class="drone d5"></div>
+        <div class="drone d6"></div>
+        <div class="drone d7"></div>
+        <div class="drone d8"></div>
     </div>
     """, unsafe_allow_html=True)
 
