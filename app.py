@@ -6,157 +6,66 @@ import altair as alt
 # 1. PAGE CONFIGURATION
 st.set_page_config(page_title="Drone Diagnostics", layout="wide", page_icon="🚁")
 
-# 2. ANIMATED BACKGROUND (Minimalist Straight Lines via Canvas + JS)
+# 2. ANIMATED BACKGROUND (Pure CSS Colorful Telemetry Lines)
 st.markdown("""
     <style>
-    /* Global Background - Gentle Gradient behind the lines */
-    .stApp { background: linear-gradient(to bottom right, #f8fbff, #ffffff); }
+    /* Global Background */
+    .stApp { background: linear-gradient(to bottom right, #f4f8fc, #ffffff); }
     
-    /* THE CANVAS ELEMENT (Strictly behind everything) */
-    #bgCanvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1; /* Behind all Streamlit content */
-        pointer-events: none; /* Let clicks pass through to columns */
+    /* THE LINES CONTAINER */
+    .bg-lines {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        overflow: hidden; z-index: 0; margin: 0; padding: 0; pointer-events: none;
+    }
+    
+    /* BASE LINE STYLING */
+    .bg-lines li {
+        position: absolute; display: block; list-style: none;
+        opacity: 0.35; /* 35% transparent - clearly visible but minimalist */
+        border-radius: 5px;
     }
 
-    /* EXISTING QUAD-COLOR THEME (Keeping slight transparency so lines show slightly) */
+    /* --- VERTICAL LINES (Moving Up & Down) --- */
+    .bg-lines li:nth-child(1) { left: 10%; width: 2px; height: 300px; background: #0277bd; animation: moveUp 18s linear infinite; }
+    .bg-lines li:nth-child(2) { left: 25%; width: 4px; height: 150px; background: #00E5FF; animation: moveDown 22s linear infinite; }
+    .bg-lines li:nth-child(3) { left: 45%; width: 1px; height: 400px; background: #B388FF; animation: moveUp 15s linear infinite; }
+    .bg-lines li:nth-child(4) { left: 65%; width: 3px; height: 200px; background: #FF4081; animation: moveDown 25s linear infinite; }
+    .bg-lines li:nth-child(5) { left: 80%; width: 2px; height: 250px; background: #0277bd; animation: moveUp 20s linear infinite; }
+    .bg-lines li:nth-child(6) { left: 90%; width: 3px; height: 100px; background: #00E5FF; animation: moveDown 16s linear infinite; }
+
+    /* --- HORIZONTAL LINES (Moving Left & Right) --- */
+    .bg-lines li:nth-child(7) { top: 15%; height: 2px; width: 300px; background: #00E5FF; animation: moveRight 20s linear infinite; }
+    .bg-lines li:nth-child(8) { top: 35%; height: 4px; width: 150px; background: #0277bd; animation: moveLeft 18s linear infinite; }
+    .bg-lines li:nth-child(9) { top: 55%; height: 1px; width: 400px; background: #FF4081; animation: moveRight 25s linear infinite; }
+    .bg-lines li:nth-child(10){ top: 75%; height: 3px; width: 200px; background: #B388FF; animation: moveLeft 22s linear infinite; }
+    .bg-lines li:nth-child(11){ top: 85%; height: 2px; width: 350px; background: #0277bd; animation: moveRight 15s linear infinite; }
+    .bg-lines li:nth-child(12){ top: 95%; height: 2px; width: 100px; background: #00E5FF; animation: moveLeft 12s linear infinite; }
+
+    /* --- ANIMATION KEYFRAMES --- */
+    @keyframes moveUp { 0% { bottom: -500px; } 100% { bottom: 120vh; } }
+    @keyframes moveDown { 0% { top: -500px; } 100% { top: 120vh; } }
+    @keyframes moveRight { 0% { left: -500px; } 100% { left: 120vw; } }
+    @keyframes moveLeft { 0% { right: -500px; } 100% { right: 120vw; } }
+
+    /* EXISTING QUAD-COLOR THEME */
     div[data-testid="column"] {
-        padding: 20px; 
-        border-radius: 15px; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* Softer shadow */
-        border: none; 
-        z-index: 1; /* Keep content ABOVE the canvas */
-        position: relative;
+        padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); 
+        border: none; z-index: 1; position: relative;
     }
-    
-    /* 1. Top Left: Soft Cloud Blue (90% transparent) */
-    div[data-testid="column"]:nth-of-type(1) { background-color: rgba(227, 242, 253, 0.9); color: #0d47a1; }
-    
-    /* 2. Top Right: Minty Azure (90% transparent) */
-    div[data-testid="column"]:nth-of-type(2) { background-color: rgba(224, 247, 250, 0.9); }
-    
-    /* 3. Bottom Left: Pale Indigo (90% transparent) */
-    div[data-testid="column"]:nth-of-type(3) { background-color: rgba(232, 234, 246, 0.9); }
-    
-    /* 4. Bottom Right: Mist Grey-Blue (90% transparent) */
-    div[data-testid="column"]:nth-of-type(4) { background-color: rgba(236, 239, 241, 0.9); }
+    div[data-testid="column"]:nth-of-type(1) { background-color: rgba(227, 242, 253, 0.95); color: #0d47a1; }
+    div[data-testid="column"]:nth-of-type(2) { background-color: rgba(224, 247, 250, 0.95); }
+    div[data-testid="column"]:nth-of-type(3) { background-color: rgba(232, 234, 246, 0.95); }
+    div[data-testid="column"]:nth-of-type(4) { background-color: rgba(236, 239, 241, 0.95); }
 
-    .safe-status { color: #004d40; background-color: #b2dfdb; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
+    .safe-status { color: #004d40; background-color: #b2dfdb; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; border: 2px solid #004d40;}
     @keyframes blinker { 50% { opacity: 0.3; } }
     .blinking { animation: blinker 0.8s linear infinite; color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; border: 2px solid #721c24; }
     </style>
     
-    <canvas id="bgCanvas"></canvas>
-
-    <script>
-    (function() {
-        const canvas = document.getElementById('bgCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Match canvas size to browser window
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        // --- CONFIGURATION ---
-        const LINE_COUNT = 40; // Strict minimalism: low count avoids "messy"
-        const MINIM_COLOR = 'rgba(2, 119, 189, 0.2)'; // Minimalist Deep Ocean Blue, 20% transparent
-
-        const lines = [];
-
-        class StraightLine {
-            constructor() {
-                this.reset();
-            }
-
-            // Define starting position, length, and random motion vectors
-            reset() {
-                this.length = Math.random() * 200 + 50; // Random length between 50-250px
-                this.lineWidth = Math.random() * 3 + 1; // Randomized width: 1px to 4px
-                
-                // Spawn randomly on any screen edge
-                if (Math.random() > 0.5) {
-                    this.x = (Math.random() > 0.5) ? -this.length : canvas.width + this.length;
-                    this.y = Math.random() * canvas.height;
-                } else {
-                    this.x = Math.random() * canvas.width;
-                    this.y = (Math.random() > 0.5) ? -this.length : canvas.height + this.length;
-                }
-
-                // Random velocities for "many directions"
-                // Kept slow so it is drifting, not frantic
-                this.vx = (Math.random() - 0.5) * 1.5; 
-                this.vy = (Math.random() - 0.5) * 1.5; 
-
-                // Randomized starting orientation angle
-                this.angle = Math.random() * Math.PI * 2; 
-                // Drifting rotation speed
-                this.va = (Math.random() - 0.5) * 0.005;
-            }
-
-            // Move and update state
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.angle += this.va;
-
-                // Simple check: if fully off screen, reset to opposite edge
-                // Buffer ensures smooth entry/exit
-                const buffer = this.length + 50;
-                if (this.x < -buffer || this.x > canvas.width + buffer || 
-                    this.y < -buffer || this.y > canvas.height + buffer) {
-                    this.reset();
-                }
-            }
-
-            // Draw the straight line segment
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-
-                ctx.beginPath();
-                ctx.moveTo(-this.length / 2, 0); // Start from center-rotated point
-                ctx.lineTo(this.length / 2, 0); // End at center-rotated point
-                
-                ctx.strokeStyle = MINIM_COLOR;
-                ctx.lineWidth = this.lineWidth;
-                ctx.lineCap = 'round'; // Softer ends
-                ctx.stroke();
-
-                ctx.restore();
-            }
-        }
-
-        // Initialize particles
-        for (let i = 0; i < LINE_COUNT; i++) {
-            lines.push(new StraightLine());
-        }
-
-        // --- MAIN ANIMATION LOOP ---
-        function animate() {
-            // Clear canvas every frame (required for movement)
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Render lines
-            for (let line of lines) {
-                line.update();
-                line.draw();
-            }
-            // Request next frame automatically (hardware accelerated)
-            requestAnimationFrame(animate);
-        }
-
-        animate();
-    })();
-    </script>
+    <ul class="bg-lines">
+        <li></li><li></li><li></li><li></li><li></li><li></li>
+        <li></li><li></li><li></li><li></li><li></li><li></li>
+    </ul>
     """, unsafe_allow_html=True)
 
 st.title("🚁 Drone Vibration Analysis System")
@@ -185,7 +94,7 @@ with col1:
             df["Raw"] = df_raw.iloc[:, 0]
             df["Accel"] = df_raw.iloc[:, 1]
             
-            # 2. Force limit to exactly 1024 rows (removes excess data)
+            # 2. Force limit to exactly 1024 rows
             if len(df) > 1024:
                 df = df.head(1024)
             
